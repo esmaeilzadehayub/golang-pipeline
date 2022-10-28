@@ -49,7 +49,7 @@ livenessProbe:
   initialDelaySeconds: 128
 readinessProbe:
   enabled: true
-  path: //api/v1
+  path: /api/v1
   port: http
   initialDelaySeconds: 128
 persistence:
