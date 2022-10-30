@@ -1,5 +1,5 @@
 # golang-pipeline
-# golang-pipeline
+
 
 # Overview
 
@@ -159,7 +159,7 @@ The complete workflow of our CI + CD summarises to the following steps:
 
 ## Create a new ArgoCD managed app
 
-ArgoCD is configured to manage all resources in the [`apps`](./apps) directory.
+ArgoCD is configured to manage all resources in the app directory.
 Because ArgoCD provides Kubernetes CRDs for it's configuration we can place our
 new ArgoCD app in the `apps` directory and ArgoCD will automatically pick it up.
 The directory structure inside the `apps` directory represents our clusters,
