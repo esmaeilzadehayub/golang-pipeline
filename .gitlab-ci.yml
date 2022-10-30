@@ -1,0 +1,49 @@
+stages:
+  - build
+
+variables:
+  BUILD_BRANCHES: "/^develop$|^development$|^staging$|^master$|^main$/"
+  BUILD_CONTEXT: $CI_PROJECT_DIR
+  BUILD_DOCKERFILE: $CI_PROJECT_DIR/Dockerfile
+  IMAGE_REGISTRY: Your Repo #. set thus variable
+  IMAGE_PATH: $CI_PROJECT_NAMESPACE/
+  IMAGE_NAME: $CI_PROJECT_NAME
+  IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+  DOCKER_EXTRA_VARS: ""
+  VARS_DIR: variables
+
+build-dockerfile:
+  stage: build
+  image:
+    name: /kaniko
+    entrypoint: [""]
+  before_script:
+  - mkdir -p images
+  script:
+    # Source all .env files
+    - |
+      if [ -d ${VARS_DIR} ] && [ $(ls -A ${VARS_DIR}) ]; then
+        for var in ${VARS_DIR}/*.env; do
+          source $var
+        done
+      fi
+- |
+      /kaniko/executor \
+        --context "${BUILD_CONTEXT}" \
+        --dockerfile "${BUILD_DOCKERFILE}" \
+        --destination "${IMAGE_REGISTRY}/${IMAGE_PATH}${IMAGE_NAME}:${IMAGE_TAG}" \
+        --tarPath "images/${IMAGE_NAME}.tar" \
+        --no-push ${DOCKER_EXTRA_VARS}
+artifacts:
+    paths:
+      - images/
+    when: on_success
+    expire_in: 240 mins
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_MERGE_REQUEST_ID
+      when: never
+    - if: '$CI_COMMIT_BRANCH =~ $DEPLOY_BRANCHES'
+
+
