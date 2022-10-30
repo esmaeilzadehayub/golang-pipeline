@@ -128,6 +128,10 @@ helm template <RELEASE_NAME> <CHART> -f <PATH/TO/VALUES_FILE>
 # for example
 helm template test-demo demo -f demo/values.yaml
 ```
+
+<img width="490" alt="Screenshot 2022-10-30 at 09 42 05" src="https://user-images.githubusercontent.com/28998255/198869968-73370138-6cc5-4dd4-8322-a63e80c3beac.png">
+
+
 # ArgoCD
 
 
