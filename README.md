@@ -128,3 +128,71 @@ helm template <RELEASE_NAME> <CHART> -f <PATH/TO/VALUES_FILE>
 # for example
 helm template test-demo demo -f demo/values.yaml
 ```
+# ArgoCD
+
+
+[ArgoCD](https://argoproj.github.io/argo-cd/) is a declarative, GitOps continous delivery tool for Kubernetes. This means you describe the state of a resource in an ArgoCD config file and ArgoCD takes care that this resource in the cluster always comlies with the description you gave in the configfile.
+
+By using ArgoCD and the concept of GitOps we get some major benefits:
+
+- Our Kubernetes manifests stay valid
+- We have a single source of truth for the application state on Kubernetes
+- Easy versioning and rollback of changes to the application
+.
+
+
+## Workflow
+
+The complete workflow of our CI + CD summarises to the following steps:
+
+1. A developer pushes code to his projects repository
+2. Gitlab CI performes the CI tasks specified in the `.gitlab-ci.yml` file, i.e.:
+   - Running tests against the source code
+   - Building a Dockerfile
+   - Pushing the Dockerimage to a registry
+   - Security & vulnerability scanning
+3. After the above tasks one more CI task will update the corresponding Helm chart for this project, with the new Dockerimage tag
+4. ArgoCD watches it's configured apps and will notice the changes in the Helm chart and will update the current deployment with the new version
+
+![argocd-workflow](https://user-images.githubusercontent.com/28998255/198868788-86970581-c210-4b55-8f64-5615abb57523.png)
+
+
+## Create a new ArgoCD managed app
+
+ArgoCD is configured to manage all resources in the [`apps`](./apps) directory.
+Because ArgoCD provides Kubernetes CRDs for it's configuration we can place our
+new ArgoCD app in the `apps` directory and ArgoCD will automatically pick it up.
+The directory structure inside the `apps` directory represents our clusters,
+but is just for better overview, the placement of an application definition
+inside a specific directory does not mean it will be deployed to that cluster,
+this is defined in the `spec.destination` section of the application definition.
+
+An ArgoCD app definition looks something like the following:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1                              # The Argo CRD version
+kind: Application                                             # The Argo CRD kind
+metadata:
+  name: demo-app                                              # Name of the ArgoCD app
+  namespace: argocd                                           # Namespace to deploy the app definition to (should always be `argocd`)
+spec:
+  project: development                                        # The ArgoCD project to deploy the app in
+  source:
+    repoURL: YourRepo  # The repo URL to get the kubernetes manifests from
+    targetRevision: HEAD                                      # The branch to use
+    path: demo                                                # The path inside the repo storing the manifests
+    helm:
+      valueFiles:                                             # A list of values files, inside the helm chart, to use for this deployment
+        - values.yaml
+  destination:
+    server: YourServer    # The target cluster (Check Rancher cluster URLs)
+    namespace: demo                                           # The namespace in which to deploy the manifests
+  syncPolicy:
+    automated:
+      prune: true                                             # Prune the app on sync
+      selfHeal: true                                          # Try to heal the app on failure
+    syncOptions:
+      - CreateNamespace=true                                  # Create the specified namespace, if non existent
+```
+
+To create a new ArgoCD managed app just create a YAML file like the one above in the `apps` directory and customize the parts you want to change.
